@@ -1,10 +1,3 @@
--- update 3/13/2026 - FINAL (original code + authority emojis + script user 💢 name tags)
--- Loading/Updates page now shows exactly what you asked
--- Auto Weave tab now has the note at the bottom
--- Hitbox + Auto Weave + Damage Counter + everything else unchanged and working
--- NEW: Authority emojis (🛠 / ⭐) on GUI title for IDs + floating name tags above heads
--- NEW: Lower authority IDs table (easy to add more later)
--- NEW: 💢 only on other script users' display names above their heads (you see theirs, they see yours)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -43,9 +36,9 @@ local lowerAuthorityIds = {
 -- ===== EMOJI + SCRIPT USER NAME TAG SYSTEM =====
 local function getAuthorityBadge(userId)
     if userId == higherAuthorityId then
-        return " 🛠"
+        return " (🛠)"
     elseif lowerAuthorityIds[userId] then
-        return " ⭐"
+        return " (⭐)"
     end
     return ""
 end
@@ -94,11 +87,11 @@ local function createNameTag(plr)
 
         local emoji = ""
         if plr.UserId == higherAuthorityId then
-            emoji = " 🛠"
+            emoji = " (🛠)"
         elseif lowerAuthorityIds[plr.UserId] then
-            emoji = " ⭐"
+            emoji = " (⭐)"
         elseif scriptUsers[plr] then
-            emoji = " 💢"
+            emoji = " (💢)"
         end
         label.Text = plr.DisplayName .. emoji
 
