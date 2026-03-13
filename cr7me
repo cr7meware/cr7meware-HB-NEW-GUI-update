@@ -34,7 +34,7 @@ local commandListenerEnabled = true
 
 -- ===== LOWER AUTHORITY IDS (ADD MORE HERE IN THE FUTURE) =====
 local lowerAuthorityIds = {
-    [8846937563] = true,   -- example (you can keep or delete)
+    [] = true,   -- example (you can keep or delete)
     -- [1234567890] = true,   -- ← add new lower auth UserIds here
     -- [9876543210] = true,
     -- [1112223334] = true,
