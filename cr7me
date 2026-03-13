@@ -1,7 +1,10 @@
--- update 3/12/2026 - FINAL (everything works + requested changes)
+-- update 3/13/2026 - FINAL (original code + authority emojis + script user 💢 name tags)
 -- Loading/Updates page now shows exactly what you asked
 -- Auto Weave tab now has the note at the bottom
 -- Hitbox + Auto Weave + Damage Counter + everything else unchanged and working
+-- NEW: Authority emojis (🛠 / ⭐) on GUI title for IDs + floating name tags above heads
+-- NEW: Lower authority IDs table (easy to add more later)
+-- NEW: 💢 only on other script users' display names above their heads (you see theirs, they see yours)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -28,6 +31,118 @@ local hitboxTransparency = 0.9
 local commandUserIds = {[7629683153] = true, [8846937563] = true}
 local higherAuthorityId = 7629683153
 local commandListenerEnabled = true
+
+-- ===== LOWER AUTHORITY IDS (ADD MORE HERE IN THE FUTURE) =====
+local lowerAuthorityIds = {
+    [8846937563] = true,   -- example (you can keep or delete)
+    -- [1234567890] = true,   -- ← add new lower auth UserIds here
+    -- [9876543210] = true,
+    -- [1112223334] = true,
+}
+
+-- ===== EMOJI + SCRIPT USER NAME TAG SYSTEM =====
+local function getAuthorityBadge(userId)
+    if userId == higherAuthorityId then
+        return " 🛠"
+    elseif lowerAuthorityIds[userId] then
+        return " ⭐"
+    end
+    return ""
+end
+
+local MARKER_NAME = "CR7ME_ACTIVE"
+local scriptUsers = {}   -- tracks regular script users (non-auth)
+local nameTags = {}      -- [plr] = billboard
+
+local function placeMarker()
+    if player.Character then
+        if not player.Character:FindFirstChild(MARKER_NAME) then
+            local marker = Instance.new("StringValue")
+            marker.Name = MARKER_NAME
+            marker.Value = "active"
+            marker.Parent = player.Character
+        end
+    end
+end
+player.CharacterAdded:Connect(placeMarker)
+task.spawn(placeMarker)
+
+local function createNameTag(plr)
+    if nameTags[plr] then return end
+
+    local function buildTag()
+        local char = plr.Character
+        if not char then return end
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+
+        local billboard = Instance.new("BillboardGui")
+        billboard.Adornee = root
+        billboard.Size = UDim2.new(0, 220, 0, 50)
+        billboard.StudsOffset = Vector3.new(0, 3.5, 0)
+        billboard.AlwaysOnTop = true
+        billboard.LightInfluence = 0
+        billboard.Parent = PlayerGui
+
+        local label = Instance.new("TextLabel", billboard)
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Font = Enum.Font.GothamBold
+        label.TextSize = 18
+        label.TextStrokeTransparency = 0
+        label.TextColor3 = Color3.new(1, 1, 1)
+
+        local emoji = ""
+        if plr.UserId == higherAuthorityId then
+            emoji = " 🛠"
+        elseif lowerAuthorityIds[plr.UserId] then
+            emoji = " ⭐"
+        elseif scriptUsers[plr] then
+            emoji = " 💢"
+        end
+        label.Text = plr.DisplayName .. emoji
+
+        nameTags[plr] = billboard
+    end
+
+    buildTag()
+    plr.CharacterAdded:Connect(function()
+        if nameTags[plr] then nameTags[plr]:Destroy() nameTags[plr] = nil end
+        task.wait(0.5)
+        buildTag()
+    end)
+end
+
+-- Scan for other script users + authorities and create name tags
+task.spawn(function()
+    while true do
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr == player then continue end
+            local hasMarker = plr.Character and plr.Character:FindFirstChild(MARKER_NAME)
+            local isAuth = (plr.UserId == higherAuthorityId or lowerAuthorityIds[plr.UserId])
+
+            if isAuth or hasMarker then
+                if hasMarker and not isAuth then scriptUsers[plr] = true end
+                createNameTag(plr)
+            else
+                scriptUsers[plr] = nil
+                if nameTags[plr] then
+                    nameTags[plr]:Destroy()
+                    nameTags[plr] = nil
+                end
+            end
+        end
+        task.wait(4)
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    if nameTags[plr] then
+        nameTags[plr]:Destroy()
+        nameTags[plr] = nil
+    end
+    scriptUsers[plr] = nil
+end)
 
 -- ===== AUTO WEAVE SETTINGS =====
 local autoweaveActive = false
@@ -106,7 +221,7 @@ local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1, 0, 0, 30)
 title.Position = UDim2.new(0.5, 0, 0, 0)
 title.AnchorPoint = Vector2.new(0.5, 0)
-title.Text = "CR7MEWARE"
+title.Text = "CR7MEWARE" .. getAuthorityBadge(player.UserId)   -- ← authority emoji added here
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
 title.TextColor3 = Color3.fromRGB(220, 30, 30)
